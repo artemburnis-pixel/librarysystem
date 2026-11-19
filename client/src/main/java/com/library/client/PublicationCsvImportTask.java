@@ -11,8 +11,15 @@ import java.nio.file.Files;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Logger;
 
 public class PublicationCsvImportTask extends Task<Integer> {
+
+    private static final Logger LOGGER =
+            Logger.getLogger(PublicationCsvImportTask.class.getName());
+
+    private static final String EXPECTED_HEADER =
+            "title,author,yearPublished,totalCopies,availableCopies";
 
     private final File file;
     private final PublicationHttpClient publicationClient;
@@ -28,81 +35,114 @@ public class PublicationCsvImportTask extends Task<Integer> {
     @Override
     protected Integer call() throws Exception {
 
+        LOGGER.info("CSV import started");
+
+        if (file == null || !file.exists() || !file.isFile()
+                || !file.canRead()) {
+            LOGGER.severe("CSV file not found or inaccessible");
+            throw new IllegalArgumentException(
+                    "CSV file not found or inaccessible."
+            );
+        }
+
         List<String> lines = Files.readAllLines(
-                file.toPath(),
-                StandardCharsets.UTF_8
+                file.toPath(), StandardCharsets.UTF_8
         );
+
+        if (lines.isEmpty()) {
+            throw new IllegalArgumentException("CSV file is empty.");
+        }
+
+        if (!lines.get(0).trim().equals(EXPECTED_HEADER)) {
+            throw new IllegalArgumentException(
+                    "Invalid CSV header."
+            );
+        }
 
         if (lines.size() <= 1) {
             throw new IllegalArgumentException(
-                    "CSV-файл не містить даних для імпорту."
+                    "CSV file contains no data."
             );
         }
 
         int total = lines.size() - 1;
         int imported = 0;
+        int skipped = 0;
 
         for (int i = 1; i < lines.size(); i++) {
 
             if (isCancelled()) {
+                LOGGER.warning("CSV import cancelled");
                 break;
             }
 
             String line = lines.get(i);
 
             if (line.trim().isEmpty()) {
+                skipped++;
                 continue;
             }
 
-            List<String> values = parseCsvLine(line);
+            try {
+                List<String> values = parseCsvLine(line);
 
-            if (values.size() != 5) {
-                throw new IllegalArgumentException(
-                        "Помилка у рядку " + (i + 1) +
-                                ": потрібно 5 стовпців."
+                if (values.size() != 5) {
+                    throw new IllegalArgumentException(
+                            "Exactly 5 columns are required."
+                    );
+                }
+
+                String title = values.get(0).trim();
+                String author = values.get(1).trim();
+
+                if (title.isEmpty() || author.isEmpty()) {
+                    throw new IllegalArgumentException(
+                            "Title or author is empty."
+                    );
+                }
+
+                int year = Integer.parseInt(values.get(2).trim());
+                int totalCopies = Integer.parseInt(values.get(3).trim());
+                int availableCopies = Integer.parseInt(values.get(4).trim());
+
+                if (year <= 0 || totalCopies < 0
+                        || availableCopies < 0
+                        || availableCopies > totalCopies) {
+                    throw new IllegalArgumentException(
+                            "Invalid numeric values."
+                    );
+                }
+
+                Publication publication = new Publication(
+                        0, title, author, year,
+                        totalCopies, availableCopies
+                );
+
+                publicationClient.addPublication(publication);
+
+                imported++;
+                LOGGER.info("Imported: " + title);
+
+            } catch (IllegalArgumentException e) {
+
+                skipped++;
+                LOGGER.warning(
+                        "Skipped row " + (i + 1) +
+                                ": " + e.getMessage()
                 );
             }
-
-            String title = values.get(0).trim();
-            String author = values.get(1).trim();
-
-            if (title.isEmpty() || author.isEmpty()) {
-                throw new IllegalArgumentException(
-                        "Порожня назва або автор у рядку " + (i + 1)
-                );
-            }
-
-            int year = Integer.parseInt(values.get(2).trim());
-            int totalCopies = Integer.parseInt(values.get(3).trim());
-            int availableCopies = Integer.parseInt(values.get(4).trim());
-
-            if (year <= 0 || totalCopies < 0 ||
-                    availableCopies < 0 ||
-                    availableCopies > totalCopies) {
-
-                throw new IllegalArgumentException(
-                        "Некоректні дані у рядку " + (i + 1)
-                );
-            }
-
-            Publication publication = new Publication(
-                    0,
-                    title,
-                    author,
-                    year,
-                    totalCopies,
-                    availableCopies
-            );
-
-            publicationClient.addPublication(publication);
-
-            imported++;
 
             updateProgress(i, total);
             updateMessage(
-                    "Імпортовано " + imported + " із " + total
+                    "Додано: " + imported +
+                            ", пропущено: " + skipped
             );
         }
+
+        LOGGER.info(
+                "CSV import completed. Imported: " + imported +
+                        ", skipped: " + skipped
+        );
 
         return imported;
     }
@@ -111,7 +151,6 @@ public class PublicationCsvImportTask extends Task<Integer> {
 
         List<String> values = new ArrayList<>();
         StringBuilder current = new StringBuilder();
-
         boolean insideQuotes = false;
 
         for (int i = 0; i < line.length(); i++) {
@@ -119,20 +158,15 @@ public class PublicationCsvImportTask extends Task<Integer> {
             char c = line.charAt(i);
 
             if (c == '"') {
-
-                if (insideQuotes &&
-                        i + 1 < line.length() &&
-                        line.charAt(i + 1) == '"') {
-
+                if (insideQuotes && i + 1 < line.length()
+                        && line.charAt(i + 1) == '"') {
                     current.append('"');
                     i++;
-
                 } else {
                     insideQuotes = !insideQuotes;
                 }
 
             } else if (c == ',' && !insideQuotes) {
-
                 values.add(current.toString());
                 current.setLength(0);
 
@@ -143,12 +177,11 @@ public class PublicationCsvImportTask extends Task<Integer> {
 
         if (insideQuotes) {
             throw new IllegalArgumentException(
-                    "Незакриті лапки у CSV-рядку."
+                    "Unclosed quotation marks."
             );
         }
 
         values.add(current.toString());
-
         return values;
     }
 }

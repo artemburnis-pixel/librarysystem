@@ -324,6 +324,7 @@ public class Main extends Application {
 
     // ========== CSV IMPORT ==========
 
+
     private void importPublicationsCsv() {
 
         FileChooser fileChooser = new FileChooser();
@@ -357,9 +358,7 @@ public class Main extends Application {
 
         progressBar.setMaxWidth(Double.MAX_VALUE);
 
-        Label status = new Label(
-                "Підготовка до імпорту..."
-        );
+        Label status = new Label("Підготовка до імпорту...");
 
         status.textProperty().bind(
                 task.messageProperty()
@@ -395,8 +394,9 @@ public class Main extends Application {
 
             new Alert(
                     Alert.AlertType.INFORMATION,
-                    "Імпорт завершено! Додано видань: "
-                            + task.getValue()
+                    "Імпорт завершено!\n" +
+                            "Додано видань: " + task.getValue() + "\n" +
+                            task.getMessage()
             ).showAndWait();
         });
 
@@ -427,6 +427,7 @@ public class Main extends Application {
 
         progressWindow.show();
     }
+
 
     // ========== READERS ==========
 
