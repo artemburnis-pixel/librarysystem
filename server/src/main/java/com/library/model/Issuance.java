@@ -1,40 +1,59 @@
+
 package com.library.model;
 
 import java.util.Date;
 
 public class Issuance {
     private int id;
-    private int readerId;
-    private int publicationId;
+    private int bookingId;
     private Date issueDate;
-    private Date dueDate;
     private Date returnDate;
-    private String status;
 
-    public Issuance(int id, int readerId, int publicationId, Date issueDate, Date dueDate, Date returnDate, String status) {
+    public Issuance() {
+    }
+
+    public Issuance(int id, int bookingId, Date issueDate, Date returnDate) {
         this.id = id;
-        this.readerId = readerId;
-        this.publicationId = publicationId;
+        this.bookingId = bookingId;
         this.issueDate = issueDate;
-        this.dueDate = dueDate;
         this.returnDate = returnDate;
-        this.status = status;
     }
 
-    public Issuance(int readerId, int publicationId, Date issueDate, Date dueDate, Date returnDate, String status) {
-        this.readerId = readerId;
-        this.publicationId = publicationId;
+    public Issuance(int bookingId, Date issueDate, Date returnDate) {
+        this.bookingId = bookingId;
         this.issueDate = issueDate;
-        this.dueDate = dueDate;
         this.returnDate = returnDate;
-        this.status = status;
     }
 
-    public int getId() { return id; }
-    public int getReaderId() { return readerId; }
-    public int getPublicationId() { return publicationId; }
-    public Date getIssueDate() { return issueDate; }
-    public Date getDueDate() { return dueDate; }
-    public Date getReturnDate() { return returnDate; }
-    public String getStatus() { return status; }
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    public int getBookingId() {
+        return bookingId;
+    }
+
+    public void setBookingId(int bookingId) {
+        this.bookingId = bookingId;
+    }
+
+    public Date getIssueDate() {
+        return issueDate;
+    }
+
+    public void setIssueDate(Date issueDate) {
+        this.issueDate = issueDate;
+    }
+
+    public Date getReturnDate() {
+        return returnDate;
+    }
+
+    public void setReturnDate(Date returnDate) {
+        this.returnDate = returnDate;
+    }
 }

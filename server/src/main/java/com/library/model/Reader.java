@@ -9,6 +9,32 @@ public class Reader {
     private String phoneNumber;
     private String address;
     private Date registrationDate;
+    public Reader() {
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    public void setFullName(String fullName) {
+        this.fullName = fullName;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public void setPhoneNumber(String phoneNumber) {
+        this.phoneNumber = phoneNumber;
+    }
+
+    public void setAddress(String address) {
+        this.address = address;
+    }
+
+    public void setRegistrationDate(Date registrationDate) {
+        this.registrationDate = registrationDate;
+    }
 
     public Reader(int id, String fullName, String phoneNumber, String address, Date registrationDate) {
         this.id = id;

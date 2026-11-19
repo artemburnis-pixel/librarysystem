@@ -1,3 +1,4 @@
+
 package com.library.dao;
 
 import com.library.model.Reader;
@@ -10,7 +11,10 @@ import java.util.List;
 public class ReaderDAO {
 
     public void addReader(Reader reader) {
-        String query = "INSERT INTO readers (full_name, email, phone, address, registration_date) VALUES (?, ?, ?, ?, ?)";
+        String query = "INSERT INTO readers " +
+                "(full_name, email, phone, address, registration_date) " +
+                "VALUES (?, ?, ?, ?, ?)";
+
         try (Connection connection = DatabaseConnection.getConnection();
              PreparedStatement statement = connection.prepareStatement(query)) {
 
@@ -18,13 +22,19 @@ public class ReaderDAO {
             statement.setString(2, reader.getEmail());
             statement.setString(3, reader.getPhoneNumber());
             statement.setString(4, reader.getAddress());
-            statement.setDate(5, new java.sql.Date(reader.getRegistrationDate().getTime()));
+
+            if (reader.getRegistrationDate() != null) {
+                statement.setDate(5,
+                        new java.sql.Date(reader.getRegistrationDate().getTime()));
+            } else {
+                statement.setNull(5, Types.DATE);
+            }
 
             statement.executeUpdate();
-            System.out.println("Читача успішно додано до бази даних!");
 
         } catch (SQLException e) {
-            System.err.println("Помилка при додаванні читача: " + e.getMessage());
+            throw new RuntimeException(
+                    "Помилка при додаванні читача: " + e.getMessage(), e);
         }
     }
 
@@ -45,13 +55,52 @@ public class ReaderDAO {
                         resultSet.getString("address"),
                         resultSet.getDate("registration_date")
                 );
+
                 readers.add(reader);
             }
 
         } catch (SQLException e) {
-            System.err.println("Помилка при отриманні списку читачів: " + e.getMessage());
+            throw new RuntimeException(
+                    "Помилка при отриманні читачів: " + e.getMessage(), e);
         }
 
         return readers;
+    }
+
+    public boolean updateReader(Reader reader) {
+        String query = "UPDATE readers SET full_name = ?, email = ?, " +
+                "phone = ?, address = ? WHERE id = ?";
+
+        try (Connection connection = DatabaseConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(query)) {
+
+            statement.setString(1, reader.getFullName());
+            statement.setString(2, reader.getEmail());
+            statement.setString(3, reader.getPhoneNumber());
+            statement.setString(4, reader.getAddress());
+            statement.setInt(5, reader.getId());
+
+            return statement.executeUpdate() > 0;
+
+        } catch (SQLException e) {
+            throw new RuntimeException(
+                    "Помилка при редагуванні читача: " + e.getMessage(), e);
+        }
+    }
+
+    public boolean deleteReader(int id) {
+        String query = "DELETE FROM readers WHERE id = ?";
+
+        try (Connection connection = DatabaseConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(query)) {
+
+            statement.setInt(1, id);
+            return statement.executeUpdate() > 0;
+
+        } catch (SQLException e) {
+            throw new RuntimeException(
+                    "Не вдалося видалити читача. Можливо, він має пов'язані бронювання. " +
+                            e.getMessage(), e);
+        }
     }
 }

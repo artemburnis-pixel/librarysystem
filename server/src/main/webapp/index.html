@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Бібліотечна система</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 35px;
+            font-family: Arial, sans-serif;
+            background: #f1f4f9;
+            color: #263445;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: auto;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.07);
+        }
+
+        h1 {
+            margin-top: 0;
+            color: #24476b;
+        }
+
+        .subtitle {
+            color: #718096;
+            margin-bottom: 25px;
+        }
+
+        .top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 10px 18px;
+            background: #2864a5;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #194b83;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 14px 12px;
+            border-bottom: 1px solid #e5eaf0;
+            text-align: left;
+        }
+
+        th {
+            background: #edf3f9;
+            color: #24476b;
+        }
+
+        tr:hover {
+            background: #f7faff;
+        }
+
+        #message {
+            margin: 15px 0;
+            color: #64748b;
+        }
+
+        .available {
+            color: #16834a;
+            font-weight: bold;
+        }
+
+        @media (max-width: 750px) {
+            body {
+                padding: 12px;
+            }
+
+            .container {
+                padding: 15px;
+                overflow-x: auto;
+            }
+
+            table {
+                min-width: 700px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>Бібліотечна система</h1>
+    <p class="subtitle">Каталог видань бібліотеки</p>
+
+    <div class="top">
+        <h2>Список видань</h2>
+        <button onclick="loadPublications()">Оновити список</button>
+    </div>
+
+    <p id="message">Завантаження видань...</p>
+
+    <table>
+        <thead>
+        <tr>
+            <th>ID</th>
+            <th>Назва</th>
+            <th>Автор</th>
+            <th>Рік</th>
+            <th>Усього</th>
+            <th>Доступно</th>
+        </tr>
+        </thead>
+
+        <tbody id="publicationsTable">
+        </tbody>
+    </table>
+
+</div>
+
+<script>
+    async function loadPublications() {
+        const message = document.getElementById("message");
+        const table = document.getElementById("publicationsTable");
+
+        message.textContent = "Завантаження...";
+        table.innerHTML = "";
+
+        try {
+            const response = await fetch(
+                "api/publications"
+            );
+
+            if (!response.ok) {
+                throw new Error("Помилка сервера: " + response.status);
+            }
+
+            const publications = await response.json();
+
+            if (publications.length === 0) {
+                message.textContent = "У бібліотеці поки немає видань.";
+                return;
+            }
+
+            publications.forEach(publication => {
+                const row = document.createElement("tr");
+
+                const values = [
+                    publication.id,
+                    publication.title,
+                    publication.author,
+                    publication.yearPublished,
+                    publication.totalCopies,
+                    publication.availableCopies
+                ];
+
+                values.forEach((value, index) => {
+                    const cell = document.createElement("td");
+                    cell.textContent = value;
+
+                    if (index === 5) {
+                        cell.className = "available";
+                    }
+
+                    row.appendChild(cell);
+                });
+
+                table.appendChild(row);
+            });
+
+            message.textContent =
+                "Знайдено видань: " + publications.length;
+
+        } catch (error) {
+            message.textContent =
+                "Не вдалося завантажити видання: " + error.message;
+        }
+    }
+
+    loadPublications();
+</script>
+
+</body>
+</html>

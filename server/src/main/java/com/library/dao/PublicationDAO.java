@@ -1,3 +1,4 @@
+
 package com.library.dao;
 
 import com.library.model.Publication;
@@ -9,9 +10,11 @@ import java.util.List;
 
 public class PublicationDAO {
 
-    // Додати нове видання до бази даних
+    // Додати видання
     public void addPublication(Publication publication) {
-        String query = "INSERT INTO publications (title, author, year_published, genre, total_copies, available_copies) VALUES (?, ?, ?, ?, ?, ?)";
+        String query = "INSERT INTO publications " +
+                "(title, author, year, total_copies, available_copies) " +
+                "VALUES (?, ?, ?, ?, ?)";
 
         try (Connection connection = DatabaseConnection.getConnection();
              PreparedStatement statement = connection.prepareStatement(query)) {
@@ -19,19 +22,17 @@ public class PublicationDAO {
             statement.setString(1, publication.getTitle());
             statement.setString(2, publication.getAuthor());
             statement.setInt(3, publication.getYearPublished());
-            statement.setString(4, publication.getGenre());
-            statement.setInt(5, publication.getTotalCopies());
-            statement.setInt(6, publication.getAvailableCopies());
+            statement.setInt(4, publication.getTotalCopies());
+            statement.setInt(5, publication.getAvailableCopies());
 
             statement.executeUpdate();
-            System.out.println("Видання успішно додано!");
 
         } catch (SQLException e) {
-            System.err.println("Помилка при додаванні видання: " + e.getMessage());
+            throw new RuntimeException("Помилка додавання видання: " + e.getMessage(), e);
         }
     }
 
-    // Отримати список усіх видань
+    // Отримати всі видання
     public List<Publication> getAllPublications() {
         List<Publication> publications = new ArrayList<>();
         String query = "SELECT * FROM publications";
@@ -41,22 +42,68 @@ public class PublicationDAO {
              ResultSet resultSet = statement.executeQuery(query)) {
 
             while (resultSet.next()) {
-                Publication pub = new Publication(
+                Publication publication = new Publication(
                         resultSet.getInt("id"),
                         resultSet.getString("title"),
                         resultSet.getString("author"),
-                        resultSet.getInt("year_published"),
-                        resultSet.getString("genre"),
+                        resultSet.getInt("year"),
                         resultSet.getInt("total_copies"),
                         resultSet.getInt("available_copies")
                 );
-                publications.add(pub);
+
+                publications.add(publication);
             }
 
         } catch (SQLException e) {
-            System.err.println("Помилка при отриманні списку видань: " + e.getMessage());
+            throw new RuntimeException("Помилка отримання видань: " + e.getMessage(), e);
         }
 
         return publications;
+    }
+
+    // Редагувати видання
+    public void updatePublication(Publication publication) {
+        String query = "UPDATE publications SET title=?, author=?, " +
+                "year=?, total_copies=?, available_copies=? WHERE id=?";
+
+        try (Connection connection = DatabaseConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(query)) {
+
+            statement.setString(1, publication.getTitle());
+            statement.setString(2, publication.getAuthor());
+            statement.setInt(3, publication.getYearPublished());
+            statement.setInt(4, publication.getTotalCopies());
+            statement.setInt(5, publication.getAvailableCopies());
+            statement.setInt(6, publication.getId());
+
+            int rows = statement.executeUpdate();
+
+            if (rows == 0) {
+                throw new IllegalArgumentException("Видання з таким ID не знайдено");
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException("Помилка редагування видання: " + e.getMessage(), e);
+        }
+    }
+
+    // Видалити видання
+    public void deletePublication(int id) {
+        String query = "DELETE FROM publications WHERE id=?";
+
+        try (Connection connection = DatabaseConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(query)) {
+
+            statement.setInt(1, id);
+
+            int rows = statement.executeUpdate();
+
+            if (rows == 0) {
+                throw new IllegalArgumentException("Видання з таким ID не знайдено");
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException("Помилка видалення видання: " + e.getMessage(), e);
+        }
     }
 }
