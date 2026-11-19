@@ -1,4 +1,3 @@
-
 package com.library.service;
 
 import com.library.dao.ReaderDAO;
@@ -11,7 +10,11 @@ public class ReaderService {
     private final ReaderDAO readerDAO;
 
     public ReaderService() {
-        this.readerDAO = new ReaderDAO();
+        this(new ReaderDAO());
+    }
+
+    public ReaderService(ReaderDAO readerDAO) {
+        this.readerDAO = readerDAO;
     }
 
     public List<Reader> getAllReaders() {

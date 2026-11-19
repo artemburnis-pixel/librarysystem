@@ -1,10 +1,16 @@
-
 package com.library.service;
 
 import com.library.dao.BookingDAO;
+import com.library.dao.PublicationDAO;
+import com.library.dao.ReaderDAO;
+import com.library.model.Booking;
 import com.library.model.BookingIndicator;
+import com.library.model.Publication;
+import com.library.model.Reader;
 import com.library.servlet.BookingIndicatorCalculator;
 import org.junit.jupiter.api.Test;
+
+import java.util.Date;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -121,6 +127,53 @@ class BookingIndicatorCalculatorTest {
                 () -> service.updateBookingStatus(1, "СТВОРЕНО"));
     }
 
+    @Test
+    void shouldRejectPublicationWithEmptyTitle() {
+        PublicationService service = new PublicationService(new FakePublicationDAO());
+        Publication invalid = new Publication("   ", "Автор", 2020, 5, 5);
+
+        assertThrows(IllegalArgumentException.class,
+                () -> service.addPublication(invalid));
+    }
+
+    @Test
+    void shouldRejectPublicationWithAvailableGreaterThanTotal() {
+        PublicationService service = new PublicationService(new FakePublicationDAO());
+        Publication invalid = new Publication("Книга", "Автор", 2020, 3, 4);
+
+        assertThrows(IllegalArgumentException.class,
+                () -> service.addPublication(invalid));
+    }
+
+    @Test
+    void shouldAcceptValidPublication() {
+        FakePublicationDAO dao = new FakePublicationDAO();
+        PublicationService service = new PublicationService(dao);
+        Publication valid = new Publication("Книга", "Автор", 2020, 5, 3);
+
+        service.addPublication(valid);
+
+        assertTrue(dao.added);
+    }
+
+    @Test
+    void shouldRejectReaderWithBlankFullName() {
+        ReaderService service = new ReaderService(new FakeReaderDAO());
+        Reader invalid = new Reader(0, "", "test@mail.com", "+380501112233", "Адреса", null);
+
+        assertThrows(IllegalArgumentException.class,
+                () -> service.addReader(invalid));
+    }
+
+    @Test
+    void shouldRejectBookingWithInvalidReaderOrPublicationId() {
+        BookingService service = new BookingService(new FakeBookingDAO("СТВОРЕНО"));
+        Booking invalid = new Booking(0, 1, new Date(), null, "СТВОРЕНО");
+
+        assertThrows(IllegalArgumentException.class,
+                () -> service.addBooking(invalid));
+    }
+
     private static class FakeBookingDAO extends BookingDAO {
         private String status;
 
@@ -141,6 +194,21 @@ class BookingIndicatorCalculatorTest {
 
             status = newStatus;
             return true;
+        }
+    }
+
+    private static class FakePublicationDAO extends PublicationDAO {
+        private boolean added = false;
+
+        @Override
+        public void addPublication(Publication publication) {
+            this.added = true;
+        }
+    }
+
+    private static class FakeReaderDAO extends ReaderDAO {
+        @Override
+        public void addReader(Reader reader) {
         }
     }
 }

@@ -1,4 +1,3 @@
-
 package com.library.client;
 
 import com.library.client.http.*;
@@ -58,6 +57,8 @@ public class Main extends Application {
     private final TableView<Issuance> issuanceTable =
             new TableView<>();
 
+    private final Button importCsvButton = new Button("Імпорт CSV");
+
     @Override
     public void start(Stage stage) {
 
@@ -89,8 +90,6 @@ public class Main extends Application {
         loadBookings();
         loadIssuances();
     }
-
-    // ========== PUBLICATIONS ==========
 
     private Tab createPublicationTab() {
 
@@ -126,11 +125,10 @@ public class Main extends Application {
         Button delete = new Button("Видалити");
         delete.setOnAction(e -> deletePublication());
 
-        Button importCsv = new Button("Імпорт CSV");
-        importCsv.setOnAction(e -> importPublicationsCsv());
+        importCsvButton.setOnAction(e -> importPublicationsCsv());
 
         HBox buttons = new HBox(
-                10, refresh, add, edit, delete, importCsv
+                10, refresh, add, edit, delete, importCsvButton
         );
 
         return new Tab("Видання",
@@ -322,10 +320,11 @@ public class Main extends Application {
         return dialog;
     }
 
-    // ========== CSV IMPORT ==========
-
-
     private void importPublicationsCsv() {
+
+        if (importCsvButton.isDisabled()) {
+            return;
+        }
 
         FileChooser fileChooser = new FileChooser();
 
@@ -344,6 +343,8 @@ public class Main extends Application {
         if (file == null) {
             return;
         }
+
+        importCsvButton.setDisable(true);
 
         PublicationCsvImportTask task =
                 new PublicationCsvImportTask(
@@ -387,7 +388,7 @@ public class Main extends Application {
         });
 
         task.setOnSucceeded(event -> {
-
+            importCsvButton.setDisable(false);
             progressWindow.close();
 
             loadPublications();
@@ -401,7 +402,7 @@ public class Main extends Application {
         });
 
         task.setOnFailed(event -> {
-
+            importCsvButton.setDisable(false);
             progressWindow.close();
 
             Throwable error = task.getException();
@@ -417,6 +418,7 @@ public class Main extends Application {
         });
 
         task.setOnCancelled(event -> {
+            importCsvButton.setDisable(false);
             progressWindow.close();
             loadPublications();
         });
@@ -427,10 +429,6 @@ public class Main extends Application {
 
         progressWindow.show();
     }
-
-
-    // ========== READERS ==========
-
 
     private Tab createReaderTab() {
 
@@ -473,7 +471,6 @@ public class Main extends Application {
         return new Tab("Читачі",
                 new VBox(10, readerTable, buttons));
     }
-
 
     private void loadReaders() {
         try {
@@ -555,8 +552,6 @@ public class Main extends Application {
             }
         });
     }
-
-
 
     private void editReader() {
 
@@ -675,9 +670,6 @@ public class Main extends Application {
             }
         });
     }
-
-    // ========== BOOKINGS ==========
-
 
     private Tab createBookingTab() {
 
@@ -974,7 +966,7 @@ public class Main extends Application {
         }
 
         Alert confirmation = new Alert(Alert.AlertType.CONFIRMATION);
-        confirmation.setTitle("Зміна статусу");
+        confirmation.setTitle("Зміна статус");
         confirmation.setHeaderText("Змінити статус бронювання №"
                 + selected.getId() + "?");
         confirmation.setContentText(
@@ -1048,12 +1040,6 @@ public class Main extends Application {
             showError("Не вдалося отримати показники: " + e.getMessage());
         }
     }
-
-
-
-    // ========== ISSUANCES ==========
-
-
 
     private Tab createIssuanceTab() {
 
@@ -1204,10 +1190,9 @@ public class Main extends Application {
             }
         });
     }
+
     private void loadIssuances() {
         try {
-            // Спочатку оновлюємо бронювання,
-            // щоб підтягнути актуальні дані читачів і видань
             loadBookings();
 
             issuances.setAll(
@@ -1221,7 +1206,6 @@ public class Main extends Application {
                     + e.getMessage());
         }
     }
-
 
     private void returnIssuance() {
 
@@ -1269,11 +1253,6 @@ public class Main extends Application {
             }
         });
     }
-
-
-    // ========== TABLE HELPERS ==========
-
-    // ========== COMBO BOX HELPERS ==========
 
     private <T> void configureComboBox(
             ComboBox<T> combo,
@@ -1330,7 +1309,6 @@ public class Main extends Application {
                 + " — " + publicationName(booking.getPublicationId());
     }
 
-
     private <T> void addNumberColumn(
             TableView<T> table,
             String title,
@@ -1365,8 +1343,6 @@ public class Main extends Application {
         table.getColumns().add(column);
     }
 
-    // ========== ERRORS ==========
-
     private void showError(String message) {
 
         Alert alert = new Alert(Alert.AlertType.ERROR);
@@ -1381,6 +1357,7 @@ public class Main extends Application {
     public static void main(String[] args) {
         launch(args);
     }
+
     private void showInfo(String message) {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setTitle("Інформація");
@@ -1389,4 +1366,3 @@ public class Main extends Application {
         alert.showAndWait();
     }
 }
-

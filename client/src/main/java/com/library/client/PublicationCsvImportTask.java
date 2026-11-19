@@ -1,4 +1,3 @@
-
 package com.library.client;
 
 import com.library.client.http.PublicationHttpClient;
@@ -35,7 +34,7 @@ public class PublicationCsvImportTask extends Task<Integer> {
     @Override
     protected Integer call() throws Exception {
 
-        LOGGER.info("CSV import started");
+        LOGGER.info("CSV import started: " + (file != null ? file.getName() : "null"));
 
         if (file == null || !file.exists() || !file.isFile()
                 || !file.canRead()) {
@@ -50,16 +49,19 @@ public class PublicationCsvImportTask extends Task<Integer> {
         );
 
         if (lines.isEmpty()) {
+            LOGGER.severe("CSV file is empty");
             throw new IllegalArgumentException("CSV file is empty.");
         }
 
         if (!lines.get(0).trim().equals(EXPECTED_HEADER)) {
+            LOGGER.severe("Invalid CSV header: " + lines.get(0));
             throw new IllegalArgumentException(
                     "Invalid CSV header."
             );
         }
 
         if (lines.size() <= 1) {
+            LOGGER.severe("CSV file contains no data");
             throw new IllegalArgumentException(
                     "CSV file contains no data."
             );
@@ -80,6 +82,9 @@ public class PublicationCsvImportTask extends Task<Integer> {
 
             if (line.trim().isEmpty()) {
                 skipped++;
+                LOGGER.warning("Skipped row " + (i + 1) + ": Empty line");
+                updateProgress(i, total);
+                updateMessage("Додано: " + imported + ", пропущено: " + skipped);
                 continue;
             }
 
@@ -121,9 +126,9 @@ public class PublicationCsvImportTask extends Task<Integer> {
                 publicationClient.addPublication(publication);
 
                 imported++;
-                LOGGER.info("Imported: " + title);
+                LOGGER.info("Imported row " + (i + 1) + ": " + title);
 
-            } catch (IllegalArgumentException e) {
+            } catch (Exception e) {
 
                 skipped++;
                 LOGGER.warning(

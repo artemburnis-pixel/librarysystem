@@ -1,4 +1,3 @@
-
 package com.library.service;
 
 import com.library.dao.PublicationDAO;
@@ -11,7 +10,11 @@ public class PublicationService {
     private final PublicationDAO publicationDAO;
 
     public PublicationService() {
-        this.publicationDAO = new PublicationDAO();
+        this(new PublicationDAO());
+    }
+
+    public PublicationService(PublicationDAO publicationDAO) {
+        this.publicationDAO = publicationDAO;
     }
 
     public List<Publication> getAllPublications() {
