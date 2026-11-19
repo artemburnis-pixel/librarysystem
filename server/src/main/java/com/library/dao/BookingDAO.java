@@ -3,6 +3,7 @@ package com.library.dao;
 
 import com.library.model.Booking;
 import com.library.model.BookingIndicator;
+import com.library.servlet.BookingIndicatorCalculator;
 import com.library.util.DatabaseConnection;
 
 import java.sql.*;
@@ -198,31 +199,26 @@ public class BookingDAO {
             }
 
             while (resultSet.next()) {
-                BookingIndicator indicator = new BookingIndicator();
+
 
                 int waitDays = resultSet.getInt("wait_days");
                 int demandCount = resultSet.getInt("demand_count");
                 int totalCopies = resultSet.getInt("total_copies");
                 int availableCopies = resultSet.getInt("available_copies");
 
-                double f1 = Math.min(waitDays / 30.0, 1.0) * 100.0;
+                BookingIndicator indicator =
+                        BookingIndicatorCalculator.calculate(
+                                waitDays,
+                                demandCount,
+                                maxDemand,
+                                totalCopies,
+                                availableCopies
+                        );
 
-                double f2 = maxDemand > 0
-                        ? (demandCount / (double) maxDemand) * 100.0
-                        : 0.0;
-
-                double f3 = totalCopies > 0
-                        ? ((totalCopies - availableCopies) / (double) totalCopies) * 100.0
-                        : 0.0;
-
-                f1 = Math.max(0.0, Math.min(f1, 100.0));
-                f2 = Math.max(0.0, Math.min(f2, 100.0));
-                f3 = Math.max(0.0, Math.min(f3, 100.0));
-
-                double integralValue =
-                        0.40 * f1 +
-                                0.35 * f2 +
-                                0.25 * f3;
+                double f1 = indicator.getF1();
+                double f2 = indicator.getF2();
+                double f3 = indicator.getF3();
+                double integralValue = indicator.getIntegralValue();
 
                 indicator.setBookingId(resultSet.getInt("booking_id"));
                 indicator.setPublicationId(resultSet.getInt("publication_id"));

@@ -1,3 +1,4 @@
+
 package com.library.service;
 
 import com.library.dao.BookingDAO;
@@ -16,7 +17,15 @@ public class BookingService {
     private static final String COMPLETED = "ЗАВЕРШЕНО";
 
     public BookingService() {
-        this.bookingDAO = new BookingDAO();
+        this(new BookingDAO());
+    }
+
+    public BookingService(BookingDAO bookingDAO) {
+        if (bookingDAO == null) {
+            throw new IllegalArgumentException(
+                    "BookingDAO не може бути null");
+        }
+        this.bookingDAO = bookingDAO;
     }
 
     public List<Booking> getAllBookings() {
@@ -42,7 +51,6 @@ public class BookingService {
         booking.setStatus(CREATED);
         bookingDAO.addBooking(booking);
     }
-
 
     public void updateBookingStatus(int id, String newStatus) {
         if (id <= 0) {
@@ -165,5 +173,4 @@ public class BookingService {
                     "Не вдалося видалити бронювання. Можливо, для нього вже створена видача.");
         }
     }
-
 }
