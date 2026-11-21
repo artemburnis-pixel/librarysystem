@@ -7,7 +7,6 @@ import com.library.model.Booking;
 import com.library.model.BookingIndicator;
 import com.library.model.Publication;
 import com.library.model.Reader;
-import com.library.servlet.BookingIndicatorCalculator;
 import org.junit.jupiter.api.Test;
 
 import java.util.Date;
@@ -160,6 +159,15 @@ class BookingIndicatorCalculatorTest {
     void shouldRejectReaderWithBlankFullName() {
         ReaderService service = new ReaderService(new FakeReaderDAO());
         Reader invalid = new Reader(0, "", "test@mail.com", "+380501112233", "Адреса", null);
+
+        assertThrows(IllegalArgumentException.class,
+                () -> service.addReader(invalid));
+    }
+
+    @Test
+    void shouldRejectReaderWithInvalidEmail() {
+        ReaderService service = new ReaderService(new FakeReaderDAO());
+        Reader invalid = new Reader(0, "Іван Петренко", "invalid-email", "+380501112233", "Адреса", null);
 
         assertThrows(IllegalArgumentException.class,
                 () -> service.addReader(invalid));

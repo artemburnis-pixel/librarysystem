@@ -2,7 +2,7 @@ package com.library.dao;
 
 import com.library.model.Booking;
 import com.library.model.BookingIndicator;
-import com.library.servlet.BookingIndicatorCalculator;
+import com.library.service.BookingIndicatorCalculator;
 import com.library.util.DatabaseConnection;
 
 import java.sql.*;
@@ -13,33 +13,59 @@ import java.util.List;
 public class BookingDAO {
 
     public void addBooking(Booking booking) {
+        String checkReaderSql = "SELECT COUNT(*) FROM readers WHERE id = ?";
+        String checkPubSql = "SELECT available_copies FROM publications WHERE id = ?";
         String query = "INSERT INTO bookings " +
                 "(reader_id, publication_id, booking_date, expiry_date, status) " +
                 "VALUES (?, ?, ?, ?, ?)";
 
-        try (Connection connection = DatabaseConnection.getConnection();
-             PreparedStatement statement = connection.prepareStatement(query)) {
+        try (Connection connection = DatabaseConnection.getConnection()) {
 
-            statement.setInt(1, booking.getReaderId());
-            statement.setInt(2, booking.getPublicationId());
-
-            long bookingMillis = booking.getBookingDate() != null
-                    ? booking.getBookingDate().getTime()
-                    : System.currentTimeMillis();
-            statement.setTimestamp(3, new Timestamp(bookingMillis));
-
-            if (booking.getExpiryDate() != null) {
-                statement.setDate(4,
-                        new java.sql.Date(booking.getExpiryDate().getTime()));
-            } else {
-                LocalDate defaultExpiry =
-                        new java.sql.Date(bookingMillis).toLocalDate().plusDays(3);
-                statement.setDate(4, java.sql.Date.valueOf(defaultExpiry));
+            try (PreparedStatement readerStmt = connection.prepareStatement(checkReaderSql)) {
+                readerStmt.setInt(1, booking.getReaderId());
+                try (ResultSet rs = readerStmt.executeQuery()) {
+                    if (!rs.next() || rs.getInt(1) == 0) {
+                        throw new IllegalArgumentException("Читача з ID " + booking.getReaderId() + " не знайдено");
+                    }
+                }
             }
 
-            statement.setString(5, booking.getStatus());
-            statement.executeUpdate();
+            try (PreparedStatement pubStmt = connection.prepareStatement(checkPubSql)) {
+                pubStmt.setInt(1, booking.getPublicationId());
+                try (ResultSet rs = pubStmt.executeQuery()) {
+                    if (!rs.next()) {
+                        throw new IllegalArgumentException("Видання з ID " + booking.getPublicationId() + " не знайдено");
+                    }
+                    if (rs.getInt("available_copies") <= 0) {
+                        throw new IllegalArgumentException("Немає доступних примірників цього видання для бронювання");
+                    }
+                }
+            }
 
+            try (PreparedStatement statement = connection.prepareStatement(query)) {
+                statement.setInt(1, booking.getReaderId());
+                statement.setInt(2, booking.getPublicationId());
+
+                long bookingMillis = booking.getBookingDate() != null
+                        ? booking.getBookingDate().getTime()
+                        : System.currentTimeMillis();
+                statement.setTimestamp(3, new Timestamp(bookingMillis));
+
+                if (booking.getExpiryDate() != null) {
+                    statement.setDate(4,
+                            new java.sql.Date(booking.getExpiryDate().getTime()));
+                } else {
+                    LocalDate defaultExpiry =
+                            new java.sql.Date(bookingMillis).toLocalDate().plusDays(3);
+                    statement.setDate(4, java.sql.Date.valueOf(defaultExpiry));
+                }
+
+                statement.setString(5, booking.getStatus());
+                statement.executeUpdate();
+            }
+
+        } catch (IllegalArgumentException e) {
+            throw e;
         } catch (SQLException e) {
             throw new RuntimeException(
                     "Помилка при додаванні бронювання: " + e.getMessage(), e);
@@ -186,6 +212,7 @@ public class BookingDAO {
                         " AND bx.status <> 'ЗАВЕРШЕНО') AS demand_count " +
                         "FROM bookings b " +
                         "JOIN publications p ON p.id = b.publication_id " +
+                        "WHERE b.status <> 'ЗАВЕРШЕНО' " +
                         "ORDER BY b.id";
 
         String maxDemandQuery =

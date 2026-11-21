@@ -445,10 +445,14 @@ public class Main extends Application {
                 Reader::getPhoneNumber);
 
         addStringColumn(readerTable, "Адреса",
-                Reader::getAddress);
+                r -> (r.getAddress() == null || r.getAddress().isBlank())
+                        ? "-"
+                        : r.getAddress());
 
         addStringColumn(readerTable, "Дата реєстрації",
-                r -> String.valueOf(r.getRegistrationDate()));
+                r -> r.getRegistrationDate() == null
+                        ? "-"
+                        : String.valueOf(r.getRegistrationDate()));
 
         readerTable.setItems(readers);
 
@@ -519,17 +523,19 @@ public class Main extends Application {
         dialog.setResultConverter(button -> {
             if (button == saveButton) {
                 String name = nameField.getText().trim();
+                String email = emailField.getText().trim();
+                String phone = phoneField.getText().trim();
 
-                if (name.isEmpty()) {
-                    showError("Введіть ПІБ читача.");
+                if (name.isEmpty() || email.isEmpty() || phone.isEmpty()) {
+                    showError("Заповніть ПІБ, Email та телефон читача.");
                     return null;
                 }
 
                 return new Reader(
                         0,
                         name,
-                        emailField.getText().trim(),
-                        phoneField.getText().trim(),
+                        email,
+                        phone,
                         addressField.getText().trim(),
                         null
                 );
@@ -578,7 +584,9 @@ public class Main extends Application {
         TextField nameField = new TextField(selected.getFullName());
         TextField emailField = new TextField(selected.getEmail());
         TextField phoneField = new TextField(selected.getPhoneNumber());
-        TextField addressField = new TextField(selected.getAddress());
+        TextField addressField = new TextField(
+                selected.getAddress() == null ? "" : selected.getAddress()
+        );
 
         GridPane grid = new GridPane();
         grid.setHgap(10);
@@ -595,17 +603,19 @@ public class Main extends Application {
             if (button == saveButton) {
 
                 String name = nameField.getText().trim();
+                String email = emailField.getText().trim();
+                String phone = phoneField.getText().trim();
 
-                if (name.isEmpty()) {
-                    showError("Введіть ПІБ читача.");
+                if (name.isEmpty() || email.isEmpty() || phone.isEmpty()) {
+                    showError("Заповніть ПІБ, Email та телефон читача.");
                     return null;
                 }
 
                 return new Reader(
                         selected.getId(),
                         name,
-                        emailField.getText().trim(),
-                        phoneField.getText().trim(),
+                        email,
+                        phone,
                         addressField.getText().trim(),
                         selected.getRegistrationDate()
                 );
@@ -955,8 +965,8 @@ public class Main extends Application {
                 nextStatus = "ГОТОВЕ_ДО_ВИДАЧІ";
                 break;
             case "ГОТОВЕ_ДО_ВИДАЧІ":
-                nextStatus = "ЗАВЕРШЕНО";
-                break;
+                showInfo("Бронювання готове до видачі. Оформіть видачу та повернення книги у вкладці «Видачі».");
+                return;
             case "ЗАВЕРШЕНО":
                 showError("Бронювання вже завершено.");
                 return;
@@ -966,7 +976,7 @@ public class Main extends Application {
         }
 
         Alert confirmation = new Alert(Alert.AlertType.CONFIRMATION);
-        confirmation.setTitle("Зміна статус");
+        confirmation.setTitle("Зміна статусу");
         confirmation.setHeaderText("Змінити статус бронювання №"
                 + selected.getId() + "?");
         confirmation.setContentText(
@@ -1240,6 +1250,7 @@ public class Main extends Application {
                 try {
                     issuanceClient.returnIssuance(selected.getId());
                     loadIssuances();
+                    loadPublications();
 
                     new Alert(
                             Alert.AlertType.INFORMATION,

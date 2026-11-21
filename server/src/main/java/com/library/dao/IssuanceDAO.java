@@ -1,4 +1,3 @@
-
 package com.library.dao;
 
 import com.library.model.Issuance;
@@ -68,7 +67,6 @@ public class IssuanceDAO {
             try {
                 int publicationId;
 
-                // Перевіряємо бронювання
                 try (PreparedStatement statement =
                              connection.prepareStatement(bookingSql)) {
 
@@ -91,7 +89,6 @@ public class IssuanceDAO {
                     }
                 }
 
-                // Перевіряємо, чи видачу ще не створено
                 try (PreparedStatement statement =
                              connection.prepareStatement(duplicateSql)) {
 
@@ -105,7 +102,6 @@ public class IssuanceDAO {
                     }
                 }
 
-                // Перевіряємо наявність примірників
                 try (PreparedStatement statement =
                              connection.prepareStatement(publicationSql)) {
 
@@ -124,7 +120,6 @@ public class IssuanceDAO {
                     }
                 }
 
-                // Зменшуємо кількість доступних примірників
                 try (PreparedStatement statement =
                              connection.prepareStatement(updateCopiesSql)) {
 
@@ -136,7 +131,6 @@ public class IssuanceDAO {
                     }
                 }
 
-                // Створюємо видачу
                 try (PreparedStatement statement =
                              connection.prepareStatement(insertSql)) {
 
@@ -158,6 +152,8 @@ public class IssuanceDAO {
                 connection.setAutoCommit(true);
             }
 
+        } catch (IllegalArgumentException e) {
+            throw e;
         } catch (Exception e) {
             throw new RuntimeException(
                     "Помилка додавання видачі: " + e.getMessage(), e
@@ -217,7 +213,6 @@ public class IssuanceDAO {
                 int bookingId;
                 int publicationId;
 
-                // Знаходимо видачу та блокуємо запис
                 try (PreparedStatement statement =
                              connection.prepareStatement(selectSql)) {
 
@@ -234,7 +229,6 @@ public class IssuanceDAO {
                     }
                 }
 
-                // Записуємо дату повернення
                 try (PreparedStatement statement =
                              connection.prepareStatement(returnSql)) {
 
@@ -246,7 +240,6 @@ public class IssuanceDAO {
                     }
                 }
 
-                // Завершуємо бронювання
                 try (PreparedStatement statement =
                              connection.prepareStatement(bookingSql)) {
 
@@ -258,7 +251,6 @@ public class IssuanceDAO {
                     }
                 }
 
-                // Повертаємо примірник у доступні
                 try (PreparedStatement statement =
                              connection.prepareStatement(publicationSql)) {
 

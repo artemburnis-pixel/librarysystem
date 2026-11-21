@@ -1,10 +1,10 @@
-
 package com.library.dao;
 
 import com.library.model.Reader;
 import com.library.util.DatabaseConnection;
 
 import java.sql.*;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -27,11 +27,14 @@ public class ReaderDAO {
                 statement.setDate(5,
                         new java.sql.Date(reader.getRegistrationDate().getTime()));
             } else {
-                statement.setNull(5, Types.DATE);
+                statement.setDate(5, java.sql.Date.valueOf(LocalDate.now()));
             }
 
             statement.executeUpdate();
 
+        } catch (SQLIntegrityConstraintViolationException e) {
+            throw new IllegalArgumentException(
+                    "Читач із таким Email уже існує");
         } catch (SQLException e) {
             throw new RuntimeException(
                     "Помилка при додаванні читача: " + e.getMessage(), e);
@@ -82,6 +85,9 @@ public class ReaderDAO {
 
             return statement.executeUpdate() > 0;
 
+        } catch (SQLIntegrityConstraintViolationException e) {
+            throw new IllegalArgumentException(
+                    "Читач із таким Email уже існує");
         } catch (SQLException e) {
             throw new RuntimeException(
                     "Помилка при редагуванні читача: " + e.getMessage(), e);

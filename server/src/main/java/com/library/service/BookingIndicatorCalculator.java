@@ -1,4 +1,4 @@
-package com.library.servlet;
+package com.library.service;
 
 import com.library.model.BookingIndicator;
 

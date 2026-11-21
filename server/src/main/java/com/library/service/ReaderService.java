@@ -57,5 +57,16 @@ public class ReaderService {
                 reader.getFullName().trim().isEmpty()) {
             throw new IllegalArgumentException("Введіть ПІБ читача");
         }
+
+        if (reader.getEmail() == null ||
+                reader.getEmail().trim().isEmpty() ||
+                !reader.getEmail().contains("@")) {
+            throw new IllegalArgumentException("Введіть коректний Email читача");
+        }
+
+        if (reader.getPhoneNumber() == null ||
+                reader.getPhoneNumber().trim().isEmpty()) {
+            throw new IllegalArgumentException("Введіть номер телефону читача");
+        }
     }
 }
