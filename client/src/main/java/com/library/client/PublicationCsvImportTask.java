@@ -10,6 +10,7 @@ import java.nio.file.Files;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.logging.Logger;
 
 public class PublicationCsvImportTask extends Task<Integer> {
@@ -17,8 +18,15 @@ public class PublicationCsvImportTask extends Task<Integer> {
     private static final Logger LOGGER =
             Logger.getLogger(PublicationCsvImportTask.class.getName());
 
-    private static final String EXPECTED_HEADER =
-            "title,author,yearPublished,totalCopies,availableCopies";
+    private static final Set<String> VALID_COMMA_HEADERS = Set.of(
+            "title,author,year,totalCopies,availableCopies",
+            "title,author,yearPublished,totalCopies,availableCopies"
+    );
+
+    private static final Set<String> VALID_SEMICOLON_HEADERS = Set.of(
+            "title;author;year;totalCopies;availableCopies",
+            "title;author;yearPublished;totalCopies;availableCopies"
+    );
 
     private final File file;
     private final PublicationHttpClient publicationClient;
@@ -53,10 +61,17 @@ public class PublicationCsvImportTask extends Task<Integer> {
             throw new IllegalArgumentException("CSV file is empty.");
         }
 
-        if (!lines.get(0).trim().equals(EXPECTED_HEADER)) {
-            LOGGER.severe("Invalid CSV header: " + lines.get(0));
+        String header = lines.get(0).replace("\uFEFF", "").trim();
+        char delimiter;
+
+        if (VALID_COMMA_HEADERS.contains(header)) {
+            delimiter = ',';
+        } else if (VALID_SEMICOLON_HEADERS.contains(header)) {
+            delimiter = ';';
+        } else {
+            LOGGER.severe("Invalid CSV header: " + header);
             throw new IllegalArgumentException(
-                    "Invalid CSV header."
+                    "Invalid CSV header: " + header
             );
         }
 
@@ -78,7 +93,7 @@ public class PublicationCsvImportTask extends Task<Integer> {
                 break;
             }
 
-            String line = lines.get(i);
+            String line = lines.get(i).replace("\uFEFF", "");
 
             if (line.trim().isEmpty()) {
                 skipped++;
@@ -89,7 +104,7 @@ public class PublicationCsvImportTask extends Task<Integer> {
             }
 
             try {
-                List<String> values = parseCsvLine(line);
+                List<String> values = parseCsvLine(line, delimiter);
 
                 if (values.size() != 5) {
                     throw new IllegalArgumentException(
@@ -152,7 +167,7 @@ public class PublicationCsvImportTask extends Task<Integer> {
         return imported;
     }
 
-    private List<String> parseCsvLine(String line) {
+    private List<String> parseCsvLine(String line, char delimiter) {
 
         List<String> values = new ArrayList<>();
         StringBuilder current = new StringBuilder();
@@ -171,7 +186,7 @@ public class PublicationCsvImportTask extends Task<Integer> {
                     insideQuotes = !insideQuotes;
                 }
 
-            } else if (c == ',' && !insideQuotes) {
+            } else if (c == delimiter && !insideQuotes) {
                 values.add(current.toString());
                 current.setLength(0);
 

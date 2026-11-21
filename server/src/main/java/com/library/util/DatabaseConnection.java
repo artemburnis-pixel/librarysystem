@@ -11,6 +11,15 @@ public class DatabaseConnection {
     private static final String DEFAULT_USER = "root";
     private static final String DEFAULT_PASSWORD = "";
 
+    private static final String URL = getEnvOrDefault("DB_URL", DEFAULT_URL);
+    private static final String USER = getEnvOrDefault("DB_USER", DEFAULT_USER);
+    private static final String PASSWORD = getEnvOrDefault("DB_PASSWORD", DEFAULT_PASSWORD);
+
+    private static String getEnvOrDefault(String key, String defaultValue) {
+        String value = System.getenv(key);
+        return (value != null && !value.isBlank()) ? value.trim() : defaultValue;
+    }
+
     public static Connection getConnection() throws SQLException {
         try {
             Class.forName("com.mysql.cj.jdbc.Driver");
@@ -18,15 +27,6 @@ public class DatabaseConnection {
             throw new SQLException("MySQL-драйвер не знайдено!", e);
         }
 
-        String url = getEnvOrDefault("DB_URL", DEFAULT_URL);
-        String user = getEnvOrDefault("DB_USER", DEFAULT_USER);
-        String password = getEnvOrDefault("DB_PASSWORD", DEFAULT_PASSWORD);
-
-        return DriverManager.getConnection(url, user, password);
-    }
-
-    private static String getEnvOrDefault(String key, String defaultValue) {
-        String value = System.getenv(key);
-        return (value != null && !value.isBlank()) ? value : defaultValue;
+        return DriverManager.getConnection(URL, USER, PASSWORD);
     }
 }

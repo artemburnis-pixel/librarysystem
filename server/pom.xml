@@ -52,7 +52,7 @@
     </dependencies>
 
     <build>
-        <finalName>library-server</finalName>
+        <finalName>publications</finalName>
 
         <plugins>
 

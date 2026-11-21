@@ -1,4 +1,3 @@
-
 package com.library.dao;
 
 import com.library.model.Booking;
@@ -7,6 +6,7 @@ import com.library.servlet.BookingIndicatorCalculator;
 import com.library.util.DatabaseConnection;
 
 import java.sql.*;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -14,8 +14,8 @@ public class BookingDAO {
 
     public void addBooking(Booking booking) {
         String query = "INSERT INTO bookings " +
-                "(reader_id, publication_id, booking_date, status) " +
-                "VALUES (?, ?, ?, ?)";
+                "(reader_id, publication_id, booking_date, expiry_date, status) " +
+                "VALUES (?, ?, ?, ?, ?)";
 
         try (Connection connection = DatabaseConnection.getConnection();
              PreparedStatement statement = connection.prepareStatement(query)) {
@@ -23,14 +23,21 @@ public class BookingDAO {
             statement.setInt(1, booking.getReaderId());
             statement.setInt(2, booking.getPublicationId());
 
-            if (booking.getBookingDate() != null) {
-                statement.setTimestamp(3,
-                        new Timestamp(booking.getBookingDate().getTime()));
+            long bookingMillis = booking.getBookingDate() != null
+                    ? booking.getBookingDate().getTime()
+                    : System.currentTimeMillis();
+            statement.setTimestamp(3, new Timestamp(bookingMillis));
+
+            if (booking.getExpiryDate() != null) {
+                statement.setDate(4,
+                        new java.sql.Date(booking.getExpiryDate().getTime()));
             } else {
-                statement.setTimestamp(3, new Timestamp(System.currentTimeMillis()));
+                LocalDate defaultExpiry =
+                        new java.sql.Date(bookingMillis).toLocalDate().plusDays(3);
+                statement.setDate(4, java.sql.Date.valueOf(defaultExpiry));
             }
 
-            statement.setString(4, booking.getStatus());
+            statement.setString(5, booking.getStatus());
             statement.executeUpdate();
 
         } catch (SQLException e) {
@@ -54,6 +61,7 @@ public class BookingDAO {
                 booking.setReaderId(resultSet.getInt("reader_id"));
                 booking.setPublicationId(resultSet.getInt("publication_id"));
                 booking.setBookingDate(resultSet.getTimestamp("booking_date"));
+                booking.setExpiryDate(resultSet.getDate("expiry_date"));
                 booking.setStatus(resultSet.getString("status"));
 
                 bookings.add(booking);
@@ -69,7 +77,7 @@ public class BookingDAO {
 
     public boolean updateBooking(Booking booking) {
         String query = "UPDATE bookings SET " +
-                "reader_id = ?, publication_id = ?, booking_date = ? " +
+                "reader_id = ?, publication_id = ?, booking_date = ?, expiry_date = ? " +
                 "WHERE id = ? AND status = 'СТВОРЕНО' " +
                 "AND NOT EXISTS (" +
                 "SELECT 1 FROM issuances WHERE booking_id = bookings.id)";
@@ -80,15 +88,21 @@ public class BookingDAO {
             statement.setInt(1, booking.getReaderId());
             statement.setInt(2, booking.getPublicationId());
 
-            if (booking.getBookingDate() != null) {
-                statement.setTimestamp(3,
-                        new Timestamp(booking.getBookingDate().getTime()));
+            long bookingMillis = booking.getBookingDate() != null
+                    ? booking.getBookingDate().getTime()
+                    : System.currentTimeMillis();
+            statement.setTimestamp(3, new Timestamp(bookingMillis));
+
+            if (booking.getExpiryDate() != null) {
+                statement.setDate(4,
+                        new java.sql.Date(booking.getExpiryDate().getTime()));
             } else {
-                statement.setTimestamp(3,
-                        new Timestamp(System.currentTimeMillis()));
+                LocalDate defaultExpiry =
+                        new java.sql.Date(bookingMillis).toLocalDate().plusDays(3);
+                statement.setDate(4, java.sql.Date.valueOf(defaultExpiry));
             }
 
-            statement.setInt(4, booking.getId());
+            statement.setInt(5, booking.getId());
 
             return statement.executeUpdate() > 0;
 
@@ -116,7 +130,6 @@ public class BookingDAO {
                     "Помилка видалення бронювання: " + e.getMessage(), e);
         }
     }
-
 
     public String getStatusById(int id) {
         String query = "SELECT status FROM bookings WHERE id = ?";
@@ -199,8 +212,6 @@ public class BookingDAO {
             }
 
             while (resultSet.next()) {
-
-
                 int waitDays = resultSet.getInt("wait_days");
                 int demandCount = resultSet.getInt("demand_count");
                 int totalCopies = resultSet.getInt("total_copies");
@@ -215,27 +226,10 @@ public class BookingDAO {
                                 availableCopies
                         );
 
-                double f1 = indicator.getF1();
-                double f2 = indicator.getF2();
-                double f3 = indicator.getF3();
-                double integralValue = indicator.getIntegralValue();
-
                 indicator.setBookingId(resultSet.getInt("booking_id"));
                 indicator.setPublicationId(resultSet.getInt("publication_id"));
                 indicator.setPublicationTitle(
                         resultSet.getString("publication_title"));
-
-                indicator.setWaitDays(waitDays);
-                indicator.setF1(f1);
-
-                indicator.setDemandCount(demandCount);
-                indicator.setF2(f2);
-
-                indicator.setTotalCopies(totalCopies);
-                indicator.setAvailableCopies(availableCopies);
-                indicator.setF3(f3);
-
-                indicator.setIntegralValue(integralValue);
 
                 indicators.add(indicator);
             }
