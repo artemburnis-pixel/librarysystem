@@ -1,8 +1,9 @@
-
 package com.library.client.http;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.library.client.model.Booking;
 import com.library.client.model.BookingIndicator;
 
@@ -10,7 +11,9 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.text.SimpleDateFormat;
 import java.util.List;
+import java.util.TimeZone;
 
 public class BookingHttpClient {
 
@@ -18,7 +21,17 @@ public class BookingHttpClient {
             "http://localhost:8080/publications/api/bookings";
 
     private final HttpClient client = HttpClient.newHttpClient();
-    private final ObjectMapper mapper = new ObjectMapper();
+    private final ObjectMapper mapper;
+
+    public BookingHttpClient() {
+        mapper = new ObjectMapper();
+        // Фіксуємо формат дати для коректної серіалізації/десеріалізації без зсувів часових поясів
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+        dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
+        mapper.setDateFormat(dateFormat);
+        mapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+    }
 
     public List<Booking> getAllBookings() throws Exception {
         HttpRequest request = HttpRequest.newBuilder()
@@ -125,5 +138,4 @@ public class BookingHttpClient {
             throw new RuntimeException(response.body());
         }
     }
-
 }

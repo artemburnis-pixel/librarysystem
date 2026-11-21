@@ -1,4 +1,3 @@
-
 package com.library.service;
 
 import com.library.dao.BookingDAO;
@@ -72,6 +71,8 @@ public class BookingService {
 
         String expectedNextStatus;
 
+        // Суворий послідовний життєвий цикл згідно з методичкою:
+        // СТВОРЕНО -> ПІДТВЕРДЖЕНО -> ГОТОВЕ_ДО_ВИДАЧІ -> ЗАВЕРШЕНО
         switch (currentStatus) {
             case CREATED:
                 expectedNextStatus = CONFIRMED;
@@ -135,6 +136,7 @@ public class BookingService {
                     "Бронювання не знайдено");
         }
 
+        // Редагувати можна тільки бронювання у початковому статусі
         if (!CREATED.equals(currentStatus)) {
             throw new IllegalStateException(
                     "Редагувати можна тільки бронювання зі статусом СТВОРЕНО");
@@ -170,7 +172,7 @@ public class BookingService {
 
         if (!deleted) {
             throw new IllegalStateException(
-                    "Не вдалося видалити бронювання. Можливо, для нього вже створена видача.");
+                    "Не вдалося видалити бронювання.");
         }
     }
 }

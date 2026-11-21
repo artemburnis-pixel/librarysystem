@@ -23,6 +23,12 @@ public class ReaderService {
 
     public void addReader(Reader reader) {
         validateReader(reader);
+
+        // Перевірка на унікальність номера телефону при додаванні
+        if (isPhoneNumberExists(reader.getPhoneNumber(), -1)) {
+            throw new IllegalArgumentException("Читач з таким номером телефону вже існує в системі!");
+        }
+
         readerDAO.addReader(reader);
     }
 
@@ -31,6 +37,11 @@ public class ReaderService {
 
         if (reader.getId() <= 0) {
             throw new IllegalArgumentException("Некоректний ID читача");
+        }
+
+        // Перевірка на унікальність номера телефону при редагуванні (виключаємо поточного читача за ID)
+        if (isPhoneNumberExists(reader.getPhoneNumber(), reader.getId())) {
+            throw new IllegalArgumentException("Цей номер телефону вже використовується іншим читачем!");
         }
 
         if (!readerDAO.updateReader(reader)) {
@@ -68,5 +79,18 @@ public class ReaderService {
                 reader.getPhoneNumber().trim().isEmpty()) {
             throw new IllegalArgumentException("Введіть номер телефону читача");
         }
+    }
+
+    // Допоміжний метод для перевірки наявності телефону в базі
+    private boolean isPhoneNumberExists(String phoneNumber, int excludeReaderId) {
+        List<Reader> allReaders = readerDAO.getAllReaders();
+        for (Reader r : allReaders) {
+            if (r.getPhoneNumber() != null && r.getPhoneNumber().trim().equals(phoneNumber.trim())) {
+                if (excludeReaderId == -1 || r.getId() != excludeReaderId) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 }

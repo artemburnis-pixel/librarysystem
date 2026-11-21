@@ -1,8 +1,8 @@
-
 package com.library.client.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonAlias;
+import com.fasterxml.jackson.annotation.JsonFormat;
 
 import java.util.Date;
 
@@ -12,9 +12,12 @@ public class Booking {
     private int id;
     private int readerId;
     private int publicationId;
+
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd", timezone = "UTC")
     private Date bookingDate;
 
     @JsonAlias("dueDate")
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd", timezone = "UTC")
     private Date expiryDate;
 
     private String status;
