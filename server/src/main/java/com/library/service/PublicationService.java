@@ -4,8 +4,12 @@ import com.library.dao.PublicationDAO;
 import com.library.model.Publication;
 
 import java.util.List;
+import java.util.logging.Logger;
 
 public class PublicationService {
+
+    private static final Logger LOGGER =
+            Logger.getLogger(PublicationService.class.getName());
 
     private final PublicationDAO publicationDAO;
 
@@ -24,6 +28,7 @@ public class PublicationService {
     public void addPublication(Publication publication) {
         validatePublication(publication);
         publicationDAO.addPublication(publication);
+        LOGGER.info("Додано нове видання: " + publication.getTitle());
     }
 
     public void updatePublication(Publication publication) {
@@ -33,6 +38,7 @@ public class PublicationService {
 
         validatePublication(publication);
         publicationDAO.updatePublication(publication);
+        LOGGER.info("Оновлено видання ID=" + publication.getId());
     }
 
     public void deletePublication(int id) {
@@ -41,6 +47,7 @@ public class PublicationService {
         }
 
         publicationDAO.deletePublication(id);
+        LOGGER.info("Видалено видання ID=" + id);
     }
 
     private void validatePublication(Publication publication) {

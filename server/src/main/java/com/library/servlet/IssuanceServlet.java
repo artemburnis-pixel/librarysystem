@@ -1,4 +1,3 @@
-
 package com.library.servlet;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -10,8 +9,13 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class IssuanceServlet extends HttpServlet {
+
+    private static final Logger LOGGER =
+            Logger.getLogger(IssuanceServlet.class.getName());
 
     private final IssuanceService service = new IssuanceService();
     private final ObjectMapper mapper = new ObjectMapper();
@@ -24,9 +28,10 @@ public class IssuanceServlet extends HttpServlet {
         try {
             mapper.writeValue(response.getWriter(), service.getAllIssuances());
         } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "Помилка отримання видач", e);
             response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             mapper.writeValue(response.getWriter(),
-                    Map.of("error", "Помилка отримання видач"));
+                    Map.of("error", "Внутрішня помилка сервера"));
         }
     }
 
@@ -46,11 +51,13 @@ public class IssuanceServlet extends HttpServlet {
             response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             mapper.writeValue(response.getWriter(), Map.of("error", e.getMessage()));
         } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "Помилка додавання видачі", e);
             response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             mapper.writeValue(response.getWriter(),
-                    Map.of("error", "Помилка додавання видачі"));
+                    Map.of("error", "Внутрішня помилка сервера"));
         }
     }
+
     @Override
     protected void doPut(HttpServletRequest request,
                          HttpServletResponse response) throws IOException {
@@ -58,7 +65,12 @@ public class IssuanceServlet extends HttpServlet {
         response.setContentType("application/json;charset=UTF-8");
 
         try {
-            int id = Integer.parseInt(request.getParameter("id"));
+            String idParameter = request.getParameter("id");
+            if (idParameter == null || idParameter.isBlank()) {
+                throw new IllegalArgumentException("Не вказано ID видачі");
+            }
+
+            int id = Integer.parseInt(idParameter);
 
             service.returnIssuance(id);
 
@@ -77,9 +89,10 @@ public class IssuanceServlet extends HttpServlet {
                     Map.of("error", e.getMessage()));
 
         } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "Помилка повернення книги", e);
             response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             mapper.writeValue(response.getWriter(),
-                    Map.of("error", "Помилка повернення книги"));
+                    Map.of("error", "Внутрішня помилка сервера"));
         }
     }
 }

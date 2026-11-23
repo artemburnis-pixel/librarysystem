@@ -1,8 +1,7 @@
 package com.library.dao;
 
 import com.library.model.Booking;
-import com.library.model.BookingIndicator;
-import com.library.service.BookingIndicatorCalculator;
+import com.library.model.BookingIndicatorData;
 import com.library.util.DatabaseConnection;
 
 import java.sql.*;
@@ -197,8 +196,9 @@ public class BookingDAO {
         }
     }
 
-    public List<BookingIndicator> getAllBookingIndicators() {
-        List<BookingIndicator> indicators = new ArrayList<>();
+    public List<BookingIndicatorData> getAllBookingIndicatorData() {
+        List<BookingIndicatorData> dataList = new ArrayList<>();
+
 
         String query =
                 "SELECT b.id AS booking_id, " +
@@ -238,35 +238,27 @@ public class BookingDAO {
                 }
             }
 
+
             while (resultSet.next()) {
-                int waitDays = resultSet.getInt("wait_days");
-                int demandCount = resultSet.getInt("demand_count");
-                int totalCopies = resultSet.getInt("total_copies");
-                int availableCopies = resultSet.getInt("available_copies");
+                BookingIndicatorData data = new BookingIndicatorData();
+                data.setBookingId(resultSet.getInt("booking_id"));
+                data.setPublicationId(resultSet.getInt("publication_id"));
+                data.setPublicationTitle(resultSet.getString("publication_title"));
+                data.setWaitDays(resultSet.getInt("wait_days"));
+                data.setDemandCount(resultSet.getInt("demand_count"));
+                data.setMaxDemand(maxDemand);
+                data.setTotalCopies(resultSet.getInt("total_copies"));
+                data.setAvailableCopies(resultSet.getInt("available_copies"));
 
-                BookingIndicator indicator =
-                        BookingIndicatorCalculator.calculate(
-                                waitDays,
-                                demandCount,
-                                maxDemand,
-                                totalCopies,
-                                availableCopies
-                        );
-
-                indicator.setBookingId(resultSet.getInt("booking_id"));
-                indicator.setPublicationId(resultSet.getInt("publication_id"));
-                indicator.setPublicationTitle(
-                        resultSet.getString("publication_title"));
-
-                indicators.add(indicator);
+                dataList.add(data);
             }
 
         } catch (SQLException e) {
             throw new RuntimeException(
-                    "Помилка розрахунку інтегрального показника: " +
+                    "Помилка отримання даних для розрахунку інтегрального показника: " +
                             e.getMessage(), e);
         }
 
-        return indicators;
+        return dataList;
     }
 }

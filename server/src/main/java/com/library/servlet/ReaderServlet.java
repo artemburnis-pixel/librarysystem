@@ -1,4 +1,3 @@
-
 package com.library.servlet;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -10,8 +9,13 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class ReaderServlet extends HttpServlet {
+
+    private static final Logger LOGGER =
+            Logger.getLogger(ReaderServlet.class.getName());
 
     private final ReaderService service = new ReaderService();
     private final ObjectMapper mapper = new ObjectMapper();
@@ -24,9 +28,10 @@ public class ReaderServlet extends HttpServlet {
         try {
             mapper.writeValue(response.getWriter(), service.getAllReaders());
         } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "Помилка отримання читачів", e);
             response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             mapper.writeValue(response.getWriter(),
-                    Map.of("error", "Помилка отримання читачів"));
+                    Map.of("error", "Внутрішня помилка сервера"));
         }
     }
 
@@ -51,9 +56,10 @@ public class ReaderServlet extends HttpServlet {
                     Map.of("error", e.getMessage()));
 
         } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "Помилка додавання читача", e);
             response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             mapper.writeValue(response.getWriter(),
-                    Map.of("error", e.getMessage()));
+                    Map.of("error", "Внутрішня помилка сервера"));
         }
     }
 
@@ -78,9 +84,10 @@ public class ReaderServlet extends HttpServlet {
                     Map.of("error", e.getMessage()));
 
         } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "Помилка редагування читача", e);
             response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             mapper.writeValue(response.getWriter(),
-                    Map.of("error", e.getMessage()));
+                    Map.of("error", "Внутрішня помилка сервера"));
         }
     }
 
@@ -92,7 +99,7 @@ public class ReaderServlet extends HttpServlet {
         try {
             String idParameter = request.getParameter("id");
 
-            if (idParameter == null) {
+            if (idParameter == null || idParameter.isBlank()) {
                 throw new IllegalArgumentException("Не вказано ID читача");
             }
 
@@ -114,9 +121,10 @@ public class ReaderServlet extends HttpServlet {
                     Map.of("error", e.getMessage()));
 
         } catch (Exception e) {
-            response.setStatus(HttpServletResponse.SC_CONFLICT);
+            LOGGER.log(Level.SEVERE, "Помилка видалення читача", e);
+            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             mapper.writeValue(response.getWriter(),
-                    Map.of("error", e.getMessage()));
+                    Map.of("error", "Внутрішня помилка сервера"));
         }
     }
 }

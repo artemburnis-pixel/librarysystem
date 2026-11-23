@@ -3,10 +3,16 @@ package com.library.service;
 import com.library.dao.BookingDAO;
 import com.library.model.Booking;
 import com.library.model.BookingIndicator;
+import com.library.model.BookingIndicatorData;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Logger;
 
 public class BookingService {
+
+    private static final Logger LOGGER =
+            Logger.getLogger(BookingService.class.getName());
 
     private final BookingDAO bookingDAO;
 
@@ -32,7 +38,25 @@ public class BookingService {
     }
 
     public List<BookingIndicator> getAllBookingIndicators() {
-        return bookingDAO.getAllBookingIndicators();
+        List<BookingIndicatorData> rawData = bookingDAO.getAllBookingIndicatorData();
+        List<BookingIndicator> indicators = new ArrayList<>();
+
+        for (BookingIndicatorData item : rawData) {
+            BookingIndicator indicator = BookingIndicatorCalculator.calculate(
+                    item.getWaitDays(),
+                    item.getDemandCount(),
+                    item.getMaxDemand(),
+                    item.getTotalCopies(),
+                    item.getAvailableCopies()
+            );
+            indicator.setBookingId(item.getBookingId());
+            indicator.setPublicationId(item.getPublicationId());
+            indicator.setPublicationTitle(item.getPublicationTitle());
+            indicators.add(indicator);
+        }
+
+        LOGGER.info("Розраховано інтегральні показники для " + indicators.size() + " активних бронювань");
+        return indicators;
     }
 
     public void addBooking(Booking booking) {
@@ -49,6 +73,8 @@ public class BookingService {
 
         booking.setStatus(CREATED);
         bookingDAO.addBooking(booking);
+        LOGGER.info("Створено нове бронювання: readerId=" + booking.getReaderId()
+                + ", publicationId=" + booking.getPublicationId());
     }
 
     public void updateBookingStatus(int id, String newStatus) {
@@ -71,8 +97,6 @@ public class BookingService {
 
         String expectedNextStatus;
 
-        // Суворий послідовний життєвий цикл згідно з методичкою:
-        // СТВОРЕНО -> ПІДТВЕРДЖЕНО -> ГОТОВЕ_ДО_ВИДАЧІ -> ЗАВЕРШЕНО
         switch (currentStatus) {
             case CREATED:
                 expectedNextStatus = CONFIRMED;
@@ -96,6 +120,8 @@ public class BookingService {
         }
 
         if (!expectedNextStatus.equals(newStatus)) {
+            LOGGER.warning("Спроба недозволеного переходу статусу для бронювання ID=" + id
+                    + ": " + currentStatus + " -> " + newStatus);
             throw new IllegalStateException(
                     "Недозволений перехід зі статусу " + currentStatus +
                             " у статус " + newStatus +
@@ -110,6 +136,8 @@ public class BookingService {
             throw new IllegalStateException(
                     "Статус бронювання вже змінився. Оновіть список.");
         }
+
+        LOGGER.info("Статус бронювання ID=" + id + " змінено: " + currentStatus + " -> " + newStatus);
     }
 
     public void updateBooking(Booking booking) {
@@ -136,7 +164,6 @@ public class BookingService {
                     "Бронювання не знайдено");
         }
 
-        // Редагувати можна тільки бронювання у початковому статусі
         if (!CREATED.equals(currentStatus)) {
             throw new IllegalStateException(
                     "Редагувати можна тільки бронювання зі статусом СТВОРЕНО");
@@ -148,6 +175,8 @@ public class BookingService {
             throw new IllegalStateException(
                     "Не вдалося відредагувати бронювання");
         }
+
+        LOGGER.info("Відредаговано бронювання ID=" + booking.getId());
     }
 
     public void deleteBooking(int id) {
@@ -174,5 +203,7 @@ public class BookingService {
             throw new IllegalStateException(
                     "Не вдалося видалити бронювання.");
         }
+
+        LOGGER.info("Видалено бронювання ID=" + id);
     }
 }

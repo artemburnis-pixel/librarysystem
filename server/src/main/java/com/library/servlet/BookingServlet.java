@@ -1,4 +1,3 @@
-
 package com.library.servlet;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -10,8 +9,13 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class BookingServlet extends HttpServlet {
+
+    private static final Logger LOGGER =
+            Logger.getLogger(BookingServlet.class.getName());
 
     private final BookingService service = new BookingService();
     private final ObjectMapper mapper = new ObjectMapper();
@@ -39,15 +43,11 @@ public class BookingServlet extends HttpServlet {
             }
 
         } catch (Exception e) {
-            e.printStackTrace();
-            response.setStatus(
-                    HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-
+            LOGGER.log(Level.SEVERE, "Помилка обробки GET /api/bookings", e);
+            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             mapper.writeValue(
                     response.getWriter(),
-                    Map.of("error", e.getMessage() == null
-                            ? "Невідома помилка"
-                            : e.getMessage())
+                    Map.of("error", "Внутрішня помилка сервера")
             );
         }
     }
@@ -73,26 +73,20 @@ public class BookingServlet extends HttpServlet {
 
         } catch (IllegalArgumentException e) {
             response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-
             mapper.writeValue(
                     response.getWriter(),
                     Map.of("error", e.getMessage())
             );
 
         } catch (Exception e) {
-            e.printStackTrace();
-            response.setStatus(
-                    HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-
+            LOGGER.log(Level.SEVERE, "Помилка обробки POST /api/bookings", e);
+            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             mapper.writeValue(
                     response.getWriter(),
-                    Map.of("error", e.getMessage() == null
-                            ? "Невідома помилка"
-                            : e.getMessage())
+                    Map.of("error", "Внутрішня помилка сервера")
             );
         }
     }
-
 
     @Override
     protected void doPut(HttpServletRequest request,
@@ -137,12 +131,10 @@ public class BookingServlet extends HttpServlet {
                     Map.of("error", e.getMessage()));
 
         } catch (Exception e) {
-            e.printStackTrace();
+            LOGGER.log(Level.SEVERE, "Помилка обробки PUT /api/bookings", e);
             response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             mapper.writeValue(response.getWriter(),
-                    Map.of("error", e.getMessage() == null
-                            ? "Невідома помилка"
-                            : e.getMessage()));
+                    Map.of("error", "Внутрішня помилка сервера"));
         }
     }
 
@@ -185,12 +177,10 @@ public class BookingServlet extends HttpServlet {
                     Map.of("error", e.getMessage()));
 
         } catch (Exception e) {
-            e.printStackTrace();
+            LOGGER.log(Level.SEVERE, "Помилка обробки DELETE /api/bookings", e);
             response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             mapper.writeValue(response.getWriter(),
-                    Map.of("error", e.getMessage() == null
-                            ? "Невідома помилка"
-                            : e.getMessage()));
+                    Map.of("error", "Внутрішня помилка сервера"));
         }
     }
 }

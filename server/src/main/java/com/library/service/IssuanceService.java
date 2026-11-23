@@ -1,12 +1,15 @@
-
 package com.library.service;
 
 import com.library.dao.IssuanceDAO;
 import com.library.model.Issuance;
 
 import java.util.List;
+import java.util.logging.Logger;
 
 public class IssuanceService {
+
+    private static final Logger LOGGER =
+            Logger.getLogger(IssuanceService.class.getName());
 
     private final IssuanceDAO issuanceDAO;
 
@@ -19,7 +22,6 @@ public class IssuanceService {
     }
 
     public void addIssuance(Issuance issuance) {
-
         if (issuance == null) {
             throw new IllegalArgumentException(
                     "Видача не може бути порожньою");
@@ -41,10 +43,10 @@ public class IssuanceService {
         }
 
         issuanceDAO.addIssuance(issuance);
+        LOGGER.info("Оформлено видачу за бронюванням ID=" + issuance.getBookingId());
     }
 
     public void returnIssuance(int issuanceId) {
-
         if (issuanceId <= 0) {
             throw new IllegalArgumentException(
                     "Некоректний ID видачі");
@@ -56,5 +58,7 @@ public class IssuanceService {
             throw new IllegalArgumentException(
                     "Видачу не знайдено або книгу вже повернуто");
         }
+
+        LOGGER.info("Зафіксовано повернення книги за видачею ID=" + issuanceId);
     }
 }

@@ -4,8 +4,12 @@ import com.library.dao.ReaderDAO;
 import com.library.model.Reader;
 
 import java.util.List;
+import java.util.logging.Logger;
 
 public class ReaderService {
+
+    private static final Logger LOGGER =
+            Logger.getLogger(ReaderService.class.getName());
 
     private final ReaderDAO readerDAO;
 
@@ -24,12 +28,12 @@ public class ReaderService {
     public void addReader(Reader reader) {
         validateReader(reader);
 
-        // Перевірка на унікальність номера телефону при додаванні
         if (isPhoneNumberExists(reader.getPhoneNumber(), -1)) {
             throw new IllegalArgumentException("Читач з таким номером телефону вже існує в системі!");
         }
 
         readerDAO.addReader(reader);
+        LOGGER.info("Зареєстровано нового читача: " + reader.getFullName());
     }
 
     public void updateReader(Reader reader) {
@@ -39,7 +43,6 @@ public class ReaderService {
             throw new IllegalArgumentException("Некоректний ID читача");
         }
 
-        // Перевірка на унікальність номера телефону при редагуванні (виключаємо поточного читача за ID)
         if (isPhoneNumberExists(reader.getPhoneNumber(), reader.getId())) {
             throw new IllegalArgumentException("Цей номер телефону вже використовується іншим читачем!");
         }
@@ -47,6 +50,8 @@ public class ReaderService {
         if (!readerDAO.updateReader(reader)) {
             throw new IllegalArgumentException("Читача не знайдено");
         }
+
+        LOGGER.info("Оновлено дані читача ID=" + reader.getId());
     }
 
     public void deleteReader(int id) {
@@ -57,6 +62,8 @@ public class ReaderService {
         if (!readerDAO.deleteReader(id)) {
             throw new IllegalArgumentException("Читача не знайдено");
         }
+
+        LOGGER.info("Видалено читача ID=" + id);
     }
 
     private void validateReader(Reader reader) {
@@ -81,7 +88,6 @@ public class ReaderService {
         }
     }
 
-    // Допоміжний метод для перевірки наявності телефону в базі
     private boolean isPhoneNumberExists(String phoneNumber, int excludeReaderId) {
         List<Reader> allReaders = readerDAO.getAllReaders();
         for (Reader r : allReaders) {

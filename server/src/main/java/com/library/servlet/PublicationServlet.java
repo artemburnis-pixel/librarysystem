@@ -1,4 +1,3 @@
-
 package com.library.servlet;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -9,19 +8,22 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class PublicationServlet extends HttpServlet {
+
+    private static final Logger LOGGER =
+            Logger.getLogger(PublicationServlet.class.getName());
 
     private final PublicationService publicationService =
             new PublicationService();
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    // GET — отримати всі видання
     @Override
     protected void doGet(HttpServletRequest request,
                          HttpServletResponse response)
@@ -40,16 +42,16 @@ public class PublicationServlet extends HttpServlet {
             );
 
         } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "Помилка отримання видань", e);
             response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 
             objectMapper.writeValue(
                     response.getOutputStream(),
-                    Map.of("error", "Помилка отримання видань: " + e.getMessage())
+                    Map.of("error", "Внутрішня помилка сервера")
             );
         }
     }
 
-    // POST — додати видання
     @Override
     protected void doPost(HttpServletRequest request,
                           HttpServletResponse response)
@@ -83,16 +85,16 @@ public class PublicationServlet extends HttpServlet {
             );
 
         } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "Помилка додавання видання", e);
             response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 
             objectMapper.writeValue(
                     response.getOutputStream(),
-                    Map.of("error", "Помилка додавання видання: " + e.getMessage())
+                    Map.of("error", "Внутрішня помилка сервера")
             );
         }
     }
 
-    // PUT — редагувати видання
     @Override
     protected void doPut(HttpServletRequest request,
                          HttpServletResponse response)
@@ -124,16 +126,16 @@ public class PublicationServlet extends HttpServlet {
             );
 
         } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "Помилка оновлення видання", e);
             response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 
             objectMapper.writeValue(
                     response.getOutputStream(),
-                    Map.of("error", "Помилка оновлення видання: " + e.getMessage())
+                    Map.of("error", "Внутрішня помилка сервера")
             );
         }
     }
 
-    // DELETE — видалити видання
     @Override
     protected void doDelete(HttpServletRequest request,
                             HttpServletResponse response)
@@ -158,6 +160,14 @@ public class PublicationServlet extends HttpServlet {
                     Map.of("message", "Видання успішно видалено")
             );
 
+        } catch (NumberFormatException e) {
+            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+
+            objectMapper.writeValue(
+                    response.getOutputStream(),
+                    Map.of("error", "ID видання має бути цілим числом")
+            );
+
         } catch (IllegalArgumentException e) {
             response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
 
@@ -167,11 +177,12 @@ public class PublicationServlet extends HttpServlet {
             );
 
         } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "Помилка видалення видання", e);
             response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 
             objectMapper.writeValue(
                     response.getOutputStream(),
-                    Map.of("error", "Помилка видалення видання: " + e.getMessage())
+                    Map.of("error", "Внутрішня помилка сервера")
             );
         }
     }
